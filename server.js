@@ -3,7 +3,7 @@ const __d=path.dirname(fileURLToPath(import.meta.url));
 const DATA=process.env.DATA_DIR||path.join(__d,'data'),UP=path.join(DATA,'uploads');
 fs.mkdirSync(UP,{recursive:true});
 const PASS=process.env.ADMIN_PASSWORD||'honeykey@123',SECRET=process.env.SESSION_SECRET||'hk-'+PASS;
-const DEF=JSON.parse(fs.readFileSync(path.join(__d,'server/default-content.json'),'utf8'));
+const DEF=JSON.parse(fs.readFileSync(path.join(__d,'default-content.json'),'utf8'));
 const rd=(f,d)=>{try{return JSON.parse(fs.readFileSync(path.join(DATA,f),'utf8'))}catch{return d}};
 const wr=(f,v)=>{const p=path.join(DATA,f);fs.writeFileSync(p+'.tmp',JSON.stringify(v,null,1));fs.renameSync(p+'.tmp',p)};
 const content=()=>({...DEF,...rd('content.json',{})});
