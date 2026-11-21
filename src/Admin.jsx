@@ -1,27 +1,64 @@
 import {useState,useEffect} from 'react';
-import {API} from './api.js';
+import {api,inr} from './api.js';
 import {Mark} from './Art.jsx';
-const post=(a,b)=>fetch(API+'?action='+a,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})}).then(r=>r.json());
-const TABS=['Site','Home','Products','About','Founder','Contact'];
-export default function Admin({content,setContent}){
- const [ok,setOk]=useState(null),[pw,setPw]=useState(''),[d,setD]=useState(content),[tab,setTab]=useState('Site'),[msg,setMsg]=useState('');
- useEffect(()=>{fetch(API+'?action=check').then(r=>r.json()).then(j=>setOk(!!j.ok)).catch(()=>setOk(false))},[]);
- useEffect(()=>setD(content),[content]);
- const login=async e=>{e.preventDefault();const j=await post('login',{password:pw}).catch(()=>({}));j.ok?setOk(true):setMsg('Galat password')};
+const sum=(a,f)=>a.reduce((s,x)=>s+f(x),0);
+const TABS=['Dashboard','Orders','Stock','Expenses','Customers','Inbox','Website'];
+const SUB=['Site','Home','Products','About','Founder','Contact','FAQ','Reviews','Settings'];
+const ST=['New','Confirmed','Packed','Shipped','Delivered','Cancelled'];
+const dl=(n,t,m)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:m}));a.download=n;a.click()};
+const ph=p=>{const x=String(p||'').replace(/\D/g,'').slice(-10);return '91'+x};
+export default function Admin(){
+ const [ok,setOk]=useState(null),[pw,setPw]=useState(''),[A,setA]=useState(null),[d,setD]=useState(null),[tab,setTab]=useState('Dashboard'),[sub,setSub]=useState('Site'),[msg,setMsg]=useState(''),[fl,setFl]=useState('All'),[ex,setEx]=useState({title:'',amount:'',cat:'Raw honey',date:''}),[sale,setSale]=useState({id:'',qty:1,name:'',phone:''}),[ns,setNs]=useState({});
+ const note=t=>{setMsg(t);setTimeout(()=>setMsg(''),3000)};
+ const load=first=>api('admin/all').then(j=>{if(j.db){setA(j);first&&setD(j.content);setOk(true)}else setOk(false)}).catch(()=>setOk(false));
+ useEffect(()=>{load(true)},[]);
+ const act=async(a,b,t)=>{const j=await api('admin/'+a,b).catch(()=>({error:'Network error'}));j.error?note('❌ '+j.error):(note(t||'✅ Ho gaya'),await load(false));return j};
+ const login=async e=>{e.preventDefault();const j=await api('login',{password:pw}).catch(()=>({}));j.ok?load(true):setMsg(j.error||'Galat password')};
+ if(ok===null)return <div className="adm">Loading…</div>;
+ if(!ok||!A||!d)return <form className="adm login" onSubmit={login}><Mark s={64}/><h2>HoneyKey Admin</h2><input type="password" placeholder="Password" value={pw} onChange={e=>setPw(e.target.value)}/><button className="btn">Login</button><p className="err">{msg}</p></form>;
+ const {orders,expenses,inquiries,subscribers,stock}=A.db,prods=A.content.products,low=+A.content.settings.lowStock||0;
  const get=p=>p.reduce((o,k)=>o?.[k],d);
  const set=(p,v)=>{const n=JSON.parse(JSON.stringify(d));let o=n;p.slice(0,-1).forEach(k=>o=o[k]);o[p[p.length-1]]=v;setD(n)};
  const field=(p,l,area)=>{const P=area?'textarea':'input';return <label key={p.join('.')}>{l}<P value={get(p)??''} onChange={e=>set(p,e.target.value)}/></label>};
- const img=(p,l)=><label key={p.join('.')}>{l}{get(p)&&<img src={get(p)} style={{maxHeight:70,display:'block'}}/>}<input type="file" accept="image/*" onChange={async e=>{const fd=new FormData();fd.append('file',e.target.files[0]);const j=await fetch(API+'?action=upload',{method:'POST',body:fd}).then(r=>r.json());j.url?set(p,j.url):setMsg('Upload fail (max 3MB, jpg/png/webp)')}}/></label>;
- const list=(p,tpl,fs)=>{const arr=get(p);return <div>{arr.map((it,i)=><div className="card" key={i}>{fs.map(([k,l,a,im])=>im?img([...p,i,k],l):field([...p,i,k],l,a))}<button className="btn sm" onClick={()=>set(p,arr.filter((_,j)=>j!==i))}>Delete</button></div>)}<button className="btn sm" onClick={()=>set(p,[...arr,{...tpl,id:Date.now()+''}])}>+ Add</button></div>};
- const save=async()=>{const j=await post('save',{content:d}).catch(()=>({}));if(j.ok){setContent(d);setMsg('✅ Save ho gaya')}else setMsg('❌ Save fail – dubara login karo')};
- if(ok===null)return <div className="adm">Loading…</div>;
- if(!ok)return <form className="adm login" onSubmit={login}><Mark s={64}/><h2>HoneyKey Admin</h2><input type="password" placeholder="Password" value={pw} onChange={e=>setPw(e.target.value)}/><button className="btn">Login</button><p>{msg}</p></form>;
+ const chk=(p,l)=><label key={p.join('.')}><input type="checkbox" style={{width:'auto'}} checked={get(p)!==false} onChange={e=>set(p,e.target.checked)}/> {l}</label>;
+ const img=(p,l)=><label key={p.join('.')}>{l}{get(p)&&<img src={get(p)} style={{maxHeight:70,display:'block'}}/>}<input type="file" accept="image/*" onChange={e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{const j=await api('admin/upload',{data:r.result});j.url?set(p,j.url):note('❌ '+j.error)};r.readAsDataURL(f)}}/></label>;
+ const list=(p,tpl,fs)=>{const arr=get(p);return <div>{arr.map((it,i)=><div className="card" key={i}>{fs.map(([k,l,a,t])=>t==='img'?img([...p,i,k],l):t==='chk'?chk([...p,i,k],l):field([...p,i,k],l,a))}<button className="btn sm" onClick={()=>set(p,arr.filter((_,j)=>j!==i))}>Delete</button></div>)}<button className="btn sm" onClick={()=>set(p,[...arr,{...tpl,id:Date.now()+''}])}>+ Add</button></div>};
+ const live=orders.filter(o=>o.status!=='Cancelled'),paid=live.filter(o=>o.payStatus==='Paid');
+ const rev=sum(paid,o=>o.total),cogs=sum(paid,o=>sum(o.items,i=>i.cost*i.qty)),exp=sum(expenses,e=>e.amount),due=sum(live.filter(o=>o.payStatus!=='Paid'),o=>o.total);
+ const days=[...Array(7)].map((_,i)=>{const t=new Date(Date.now()-(6-i)*864e5).toISOString().slice(0,10);return{t,v:sum(live.filter(o=>o.date.slice(0,10)===t),o=>o.total)}}),mx=Math.max(...days.map(x=>x.v),1);
+ const tp={};live.forEach(o=>o.items.forEach(i=>tp[i.name]=(tp[i.name]||0)+i.qty));
+ const cu={};live.forEach(o=>{const k=o.phone||o.name,x=cu[k]||(cu[k]={name:o.name,phone:o.phone,n:0,spent:0,last:''});x.n++;x.spent+=o.total;if(o.date>x.last)x.last=o.date});
+ const lowp=prods.filter(p=>(stock[p.id]||0)<=low);
+ const csv=()=>dl('orders.csv',[['No','Date','Name','Phone','Address','Items','Total','Pay','PayStatus','Status'],...orders.map(o=>[o.no,o.date.slice(0,10),o.name,o.phone,o.address,o.items.map(i=>i.name+' x'+i.qty).join('; '),o.total,o.pay,o.payStatus,o.status])].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n'),'text/csv');
  const T={
+ Dashboard:<><div className="kpis">{[['Revenue (paid)',inr(rev)],['Gross profit',inr(rev-cogs)],['Expenses',inr(exp)],['Net profit',inr(rev-cogs-exp)],['Payment baaki',inr(due)],['New orders',orders.filter(o=>o.status==='New').length],['Total orders',live.length],['Unread inbox',inquiries.length]].map(([l,v])=><div key={l} className="kpi"><small>{l}</small><b>{v}</b></div>)}</div>
+  <h3>Last 7 din ki sales</h3><div className="bars">{days.map(x=><div key={x.t}><i style={{height:Math.max(3,x.v/mx*100)+'%'}} title={inr(x.v)}/><small>{x.t.slice(8)}</small></div>)}</div>
+  <h3>Top products</h3>{Object.entries(tp).sort((a,b)=>b[1]-a[1]).map(([n,q])=><p key={n}>{n}: <b>{q}</b> sold</p>)||null}{!Object.keys(tp).length&&<p className="muted">Abhi koi sale nahi.</p>}
+  <h3>⚠️ Low stock</h3>{lowp.length?lowp.map(p=><p key={p.id}>{p.name}: <b>{stock[p.id]||0}</b></p>):<p className="muted">Sab theek hai.</p>}
+  <p><button className="btn sm ghost" onClick={()=>dl('honeykey-backup.json',JSON.stringify(A,null,1),'application/json')}>⬇ Poora backup</button></p></>,
+ Orders:<><div className="row"><select value={fl} onChange={e=>setFl(e.target.value)}>{['All',...ST].map(s=><option key={s}>{s}</option>)}</select><button className="btn sm ghost" onClick={csv}>⬇ CSV</button></div>
+  <h3>Offline / manual sale add karo</h3><div className="row"><select value={sale.id} onChange={e=>setSale({...sale,id:e.target.value})}><option value="">Product</option>{prods.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select><input type="number" min="1" style={{width:80}} value={sale.qty} onChange={e=>setSale({...sale,qty:e.target.value})}/><input placeholder="Customer (optional)" value={sale.name} onChange={e=>setSale({...sale,name:e.target.value})}/><button className="btn sm" onClick={()=>act('sale',{name:sale.name||'Walk-in',phone:sale.phone,pay:'Cash',items:[{id:sale.id,qty:sale.qty}]},'✅ Sale add hui')}>Add</button></div>
+  <div className="tw"><table><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Payment</th></tr></thead><tbody>{orders.filter(o=>fl==='All'||o.status===fl).map(o=><tr key={o.no}><td><b>{o.no}</b><br/><small>{o.date.slice(0,10)} · {o.source}</small></td>
+  <td>{o.name}<br/><small>{o.phone}</small><br/><small>{o.address} {o.pin}</small>{o.note&&<><br/><small>📝 {o.note}</small></>}</td><td>{o.items.map(i=>`${i.name} ×${i.qty}`).join(', ')}</td><td>{inr(o.total)}<br/><small>{o.pay}</small></td>
+  <td><select value={o.status} onChange={e=>act('order',{no:o.no,status:e.target.value})}>{ST.map(s=><option key={s}>{s}</option>)}</select></td>
+  <td><select value={o.payStatus} onChange={e=>act('order',{no:o.no,payStatus:e.target.value})}><option>Pending</option><option>Paid</option></select>{o.phone&&<><br/><a href={`https://wa.me/${ph(o.phone)}?text=${encodeURIComponent(`HoneyKey: aapka order ${o.no} ${o.status} hai.`)}`} target="_blank" rel="noreferrer">💬</a></>}</td></tr>)}</tbody></table></div></>,
+ Stock:<div className="tw"><table><thead><tr><th>Product</th><th>Cost</th><th>Price</th><th>Margin</th><th>Stock</th><th>Naya count</th></tr></thead><tbody>{prods.map(p=><tr key={p.id}><td>{p.name}{p.active===false&&' (hidden)'}</td><td>{inr(p.cost)}</td><td>{inr(p.price)}</td><td>{inr(p.price-p.cost)}</td><td><b className={(stock[p.id]||0)<=low?'err':''}>{stock[p.id]||0}</b></td>
+  <td><input type="number" style={{width:90}} value={ns[p.id]??''} onChange={e=>setNs({...ns,[p.id]:e.target.value})}/> <button className="btn sm" onClick={()=>act('stock',{id:p.id,qty:ns[p.id]})}>Set</button></td></tr>)}</tbody></table></div>,
+ Expenses:<><div className="row"><input placeholder="Kya kharcha" value={ex.title} onChange={e=>setEx({...ex,title:e.target.value})}/><input type="number" placeholder="₹" style={{width:100}} value={ex.amount} onChange={e=>setEx({...ex,amount:e.target.value})}/><select value={ex.cat} onChange={e=>setEx({...ex,cat:e.target.value})}>{['Raw honey','Packaging','Labels/Printing','Marketing','Delivery','Website/Domain','Other'].map(c=><option key={c}>{c}</option>)}</select><input type="date" value={ex.date} onChange={e=>setEx({...ex,date:e.target.value})}/><button className="btn sm" onClick={()=>act('expense',ex).then(j=>j.ok&&setEx({...ex,title:'',amount:''}))}>Add</button></div>
+  <p>Total kharcha: <b>{inr(exp)}</b></p>{expenses.map(e=><div className="card" key={e.id}>{e.date} · <b>{e.title}</b> · {e.cat} · {inr(e.amount)} <button className="btn sm ghost" onClick={()=>act('del',{col:'expenses',id:e.id})}>✕</button></div>)}</>,
+ Customers:<div className="tw"><table><thead><tr><th>Naam</th><th>Phone</th><th>Orders</th><th>Total kharcha</th><th>Last</th></tr></thead><tbody>{Object.values(cu).sort((a,b)=>b.spent-a.spent).map(c=><tr key={c.phone+c.name}><td>{c.name}</td><td>{c.phone}</td><td>{c.n}</td><td>{inr(c.spent)}</td><td>{c.last.slice(0,10)}</td></tr>)}</tbody></table></div>,
+ Inbox:<><h3>Messages</h3>{inquiries.map(q=><div className="card" key={q.id}><small>{q.date.slice(0,10)}</small> <b>{q.name}</b> {q.phone}<p>{q.msg}</p>{q.phone&&<a href={`https://wa.me/${ph(q.phone)}`} target="_blank" rel="noreferrer">💬 Reply</a>} <button className="btn sm ghost" onClick={()=>act('del',{col:'inquiries',id:q.id})}>Delete</button></div>)}{!inquiries.length&&<p className="muted">Koi message nahi.</p>}
+  <h3>Subscribers ({subscribers.length})</h3>{subscribers.map(s=><p key={s.id}>{s.email} <small>{s.date.slice(0,10)}</small> <button className="btn sm ghost" onClick={()=>act('del',{col:'subscribers',id:s.id})}>✕</button></p>)}</>,
+ Website:<><div className="tabs">{SUB.map(t=><button key={t} className={t===sub?'on':''} onClick={()=>setSub(t)}>{t}</button>)}</div>{{
   Site:<>{field(['brand','name'],'Brand name')}{field(['brand','tagline'],'Tagline')}{field(['brand','footer'],'Footer text')}</>,
-  Home:<>{field(['hero','chip'],'Chip text')}{field(['hero','title'],'Hero title')}{field(['hero','sub'],'Hero sub-text',1)}{field(['hero','cta'],'Button text')}<h3>Highlights</h3>{list(['usps'],{icon:'🍯',t:'',d:''},[['icon','Icon (emoji)'],['t','Title'],['d','Detail']])}<h3>Steps</h3>{list(['steps'],{t:'',d:''},[['t','Title'],['d','Detail']])}</>,
-  Products:list(['products'],{name:'New product',size:'7 g',price:'0',tag:'',color:'#F5A400',image:'',desc:''},[['name','Name'],['size','Size'],['price','Price (₹)'],['tag','Ribbon (e.g. New)'],['color','Honey color (#hex)'],['desc','Description',1],['image','Image (optional)',0,1]]),
+  Home:<>{field(['hero','chip'],'Chip')}{field(['hero','title'],'Hero title')}{field(['hero','sub'],'Hero sub-text',1)}{field(['hero','cta'],'Button')}<h3>Highlights</h3>{list(['usps'],{icon:'🍯',t:'',d:''},[['icon','Emoji'],['t','Title'],['d','Detail']])}<h3>Steps</h3>{list(['steps'],{t:'',d:''},[['t','Title'],['d','Detail']])}</>,
+  Products:<><p className="muted">Cost sirf yahin dikhta hai, public site par nahi. Naye product ka stock "Stock" tab mein set karo.</p>{list(['products'],{name:'New product',size:'7 g',price:'0',cost:'0',tag:'',color:'#F5A400',image:'',desc:'',active:true},[['name','Name'],['size','Size'],['price','Price ₹'],['cost','Cost ₹ (private)'],['tag','Ribbon'],['color','Color #hex'],['desc','Description',1],['image','Image',0,'img'],['active','Site par dikhao',0,'chk']])}</>,
   About:<>{field(['about','title'],'Title')}{field(['about','text'],'Story',1)}<h3>Points</h3>{list(['about','points'],{t:''},[['t','Point']])}</>,
   Founder:<>{field(['founder','name'],'Name')}{field(['founder','role'],'Role')}{field(['founder','quote'],'Quote')}{field(['founder','bio'],'Bio',1)}{img(['founder','photo'],'Photo')}</>,
-  Contact:<>{['phone','whatsapp','email','address','hours','instagram'].map(k=>field(['contact',k],k))}<small>WhatsApp: country code ke saath, bina + ke (e.g. 919876543210)</small></>};
- return <div className="adm"><div className="admtop"><b><Mark s={30}/> Admin</b><span>{msg}</span><button className="btn sm" onClick={save}>💾 Save</button><a className="btn sm ghost" href="/">Site dekho</a><button className="btn sm ghost" onClick={()=>post('logout').then(()=>setOk(false))}>Logout</button></div>
- <div className="tabs">{TABS.map(t=><button key={t} className={t===tab?'on':''} onClick={()=>setTab(t)}>{t}</button>)}</div>{T[tab]}</div>}
+  Contact:<>{['phone','whatsapp','email','address','hours','instagram'].map(k=>field(['contact',k],k))}<small>WhatsApp: country code ke saath, bina + (919876543210)</small></>,
+  FAQ:list(['faqs'],{q:'',a:''},[['q','Sawal'],['a','Jawab',1]]),
+  Reviews:<><p className="muted">Sirf asli customer reviews daalo. Khaali ho to section chhupa rehta hai.</p>{list(['testimonials'],{name:'',city:'',text:'',stars:'5'},[['name','Naam'],['city','Shehar'],['text','Review',1],['stars','Stars (1-5)']])}</>,
+  Settings:<>{field(['settings','deliveryFee'],'Delivery fee ₹')}{field(['settings','freeAbove'],'Free delivery above ₹')}{field(['settings','upi'],'UPI ID (customers ko order ke baad dikhega)')}{field(['settings','lowStock'],'Low-stock alert (pieces)')}</>}[sub]}
+  <p><button className="btn" onClick={()=>act('content',{content:d},'✅ Website update ho gayi')}>💾 Save website</button></p></>};
+ return <div className="adm"><div className="admtop"><b><Mark s={30}/> HoneyKey Admin</b><span>{msg}</span><a className="btn sm ghost" href="/">Site</a><button className="btn sm ghost" onClick={()=>api('logout',{}).then(()=>setOk(false))}>Logout</button></div>
+ <div className="tabs">{TABS.map(t=><button key={t} className={t===tab?'on':''} onClick={()=>setTab(t)}>{t}{t==='Orders'&&orders.some(o=>o.status==='New')?' 🔴':''}</button>)}</div>{T[tab]}</div>}
