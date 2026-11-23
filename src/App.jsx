@@ -2,8 +2,7 @@ import {useEffect,useState,useContext} from 'react';
 import {Routes,Route,Link,useNavigate,useParams,useSearchParams,useLocation} from 'react-router-dom';
 import Admin from './Admin.jsx';
 import {Cart,Auth,Checkout,OrderPage,Account} from './Account.jsx';
-import {Mark,Pack} from './Art.jsx';
-import {Ctx,Img,Price} from './shared.jsx';
+import {Ctx,Img,Price,logoOf,iconOf} from './shared.jsx';
 import {api,wa,inr} from './api.js';
 const FONTS={system:"system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif",serif:"Georgia,'Times New Roman',serif",verdana:"Verdana,Geneva,sans-serif",trebuchet:"'Trebuchet MS',Arial,sans-serif",mono:"ui-monospace,Consolas,monospace"};
 const useC=()=>useContext(Ctx);
@@ -12,7 +11,7 @@ const Who=({f})=>f.photo?<img className="face" src={f.photo} alt={f.name}/>:<div
 
 function Header(){const {c,user,n}=useC(),nav=useNavigate(),[q,setQ]=useState('');
  return <header><div className="topbar"><div className="wrap"><span>{c.brand.topbar}</span><span>{c.contact.phone} · {c.contact.email}</span></div></div>
- <div className="mainbar"><div className="wrap mb"><Link to="/" className="logo">{c.brand.logo?<img src={c.brand.logo} alt={c.brand.name}/>:<><Mark s={34}/><b>{c.brand.name}</b></>}</Link>
+ <div className="mainbar"><div className="wrap mb"><Link to="/" className="logo"><img src={logoOf(c.brand)} alt={c.brand.name}/></Link>
  <form className="search" onSubmit={e=>{e.preventDefault();nav('/shop?q='+encodeURIComponent(q))}}><input placeholder="Search for products" value={q} onChange={e=>setQ(e.target.value)}/><button>Search</button></form>
  <div className="acts"><Link to={user?'/account':'/login'}><small>Hello, {user?user.name.split(' ')[0]:'Sign in'}</small><b>Account &amp; Orders</b></Link><Link to="/cart" className="cartl"><span>🛒</span><em>{n}</em><b>Cart</b></Link></div></div></div>
  <nav className="cats"><div className="wrap"><Link to="/">Home</Link><Link to="/shop">All Products</Link>{catsOf(c).map(x=><Link key={x} to={'/shop?cat='+encodeURIComponent(x)}>{x}</Link>)}<Link to="/about">About Us</Link><Link to="/faq">FAQ</Link><Link to="/contact">Contact</Link></div></nav></header>}
@@ -22,7 +21,7 @@ function PCard({p}){const {add}=useC();return <div className="pc"><Link to={'/pr
  {p.soldOut?<button className="btn" disabled>Out of stock</button>:<button className="btn" onClick={()=>add(p.id)}>Add to Cart</button>}</div></div>}
 
 function Home(){const {c}=useC(),f=c.founder,cats=catsOf(c);
- return <><section className="hero"><div className="wrap hi"><div><span className="chip">{c.hero.chip}</span><h1>{c.hero.title}</h1><p>{c.hero.sub}</p><Link className="btn acc" to="/shop">{c.hero.cta}</Link> <Link className="btn out" to="/about">About Us</Link></div><div className="hart">{c.hero.image?<img src={c.hero.image} alt=""/>:<Pack className="big"/>}</div></div></section>
+ return <><section className="hero"><div className="wrap hi"><div><span className="chip">{c.hero.chip}</span><h1>{c.hero.title}</h1><p>{c.hero.sub}</p><Link className="btn acc" to="/shop">{c.hero.cta}</Link> <Link className="btn out" to="/about">About Us</Link></div><div className="hart"><img src={c.hero.image||'/mark.png'} alt={c.brand.name}/></div></div></section>
  <section className="strip"><div className="wrap">{c.usps.map((u,i)=><div key={i}><span>{u.icon}</span><div><b>{u.t}</b><small>{u.d}</small></div></div>)}</div></section>
  {cats.length>1&&<section className="wrap sect"><h2>Shop by Category</h2><div className="cats2">{cats.map(x=><Link key={x} to={'/shop?cat='+encodeURIComponent(x)}>{x}</Link>)}</div></section>}
  <section className="wrap sect"><div className="shd"><h2>Featured Products</h2><Link to="/shop">View all →</Link></div><div className="pgrid">{c.products.slice(0,4).map(p=><PCard key={p.id} p={p}/>)}</div></section>
@@ -60,7 +59,7 @@ function Contact(){const {c}=useC(),k=c.contact,[m,setM]=useState({name:'',phone
 
 function Footer(){const {c}=useC(),[e,setE]=useState(''),[s,setS]=useState('');
  const sub=async()=>{const r=await api('subscribe',{email:e}).catch(()=>({error:'Network error'}));setS(r.ok?'Subscribed. Thank you!':r.error);r.ok&&setE('')};
- return <footer><div className="wrap fg"><div><b className="fb">{c.brand.name}</b><p>{c.brand.footer}</p></div><div><h4>Shop</h4><Link to="/shop">All Products</Link>{catsOf(c).map(x=><Link key={x} to={'/shop?cat='+encodeURIComponent(x)}>{x}</Link>)}</div><div><h4>Company</h4><Link to="/about">About Us</Link><Link to="/faq">FAQ</Link><Link to="/contact">Contact</Link><Link to="/account">My Account</Link></div>
+ return <footer><div className="wrap fg"><div><div className="flogo"><img src={logoOf(c.brand)} alt={c.brand.name}/></div><p>{c.brand.footer}</p></div><div><h4>Shop</h4><Link to="/shop">All Products</Link>{catsOf(c).map(x=><Link key={x} to={'/shop?cat='+encodeURIComponent(x)}>{x}</Link>)}</div><div><h4>Company</h4><Link to="/about">About Us</Link><Link to="/faq">FAQ</Link><Link to="/contact">Contact</Link><Link to="/account">My Account</Link></div>
  <div><h4>Stay updated</h4><div className="sub"><input placeholder="Your email" value={e} onChange={x=>setE(x.target.value)}/><button className="btn acc" onClick={sub}>Subscribe</button></div><small>{s}</small><p>{c.contact.phone}<br/>{c.contact.email}</p></div></div>
  <div className="fbar"><div className="wrap">© {new Date().getFullYear()} {c.brand.name}. All rights reserved. · Pay by UPI or Cash on Delivery</div></div></footer>}
 
@@ -72,11 +71,12 @@ export default function App(){
   api('user/me').then(r=>r.user?afterAuth(r):setUser(null)).catch(()=>setUser(null))},[]);
  useEffect(()=>{if(!c)return;const t=c.theme||{},s=document.documentElement.style;
   [['--p',t.primary],['--a',t.accent],['--bg',t.bg],['--tx',t.text],['--card',t.card]].forEach(([k,v])=>v&&s.setProperty(k,v));
-  s.setProperty('--r',(t.radius??6)+'px');s.setProperty('--font',FONTS[t.font]||FONTS.system);document.title=`${c.brand.name} – ${c.brand.tagline}`},[c]);
+  s.setProperty('--r',(t.radius??6)+'px');s.setProperty('--font',FONTS[t.font]||FONTS.system);document.title=`${c.brand.name} – ${c.brand.tagline}`;
+  let l=document.querySelector("link[rel='icon']");if(!l){l=document.createElement('link');l.rel='icon';document.head.appendChild(l)}l.type='image/png';l.href=iconOf(c.brand)},[c]);
  useEffect(()=>{try{localStorage.setItem('hk-cart',JSON.stringify(cart))}catch{}if(user)api('user/cart',{cart}).catch(()=>{})},[cart,user]);
  useEffect(()=>{window.scrollTo(0,0)},[pathname]);
  if(pathname.startsWith('/admin'))return <Admin/>;
- if(!c)return <div className="load"><Mark s={70}/></div>;
+ if(!c)return <div className="load"><img src="/icon.png" alt="HoneyKey" width="84"/></div>;
  const lines=c.products.filter(p=>cart[p.id]).map(p=>({...p,q:cart[p.id]})),sub=lines.reduce((s,p)=>s+p.price*p.q,0),fee=sub&&sub<+c.settings.freeAbove?+c.settings.deliveryFee:0,n=Object.values(cart).reduce((a,b)=>a+b,0);
  const add=(id,k=1)=>{const p=c.products.find(x=>x.id===id),m=Math.min(99,p?.left??99);setCart(x=>({...x,[id]:Math.min((x[id]||0)+k,m)}));setToast('Added to cart');setTimeout(()=>setToast(''),1800)};
  const setQty=(id,k)=>setCart(x=>{const m={...x};k>0?m[id]=Math.min(k,99):delete m[id];return m});

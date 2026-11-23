@@ -1,5 +1,5 @@
 {
-"brand":{"name":"HoneyKey","tagline":"Pure honey in ready-to-use packs","footer":"HoneyKey makes honey simple: single-serve, hygienically sealed packs that go wherever you go.","topbar":"Free delivery on eligible orders · Cash on Delivery & UPI accepted","logo":""},
+"brand":{"name":"HoneyKey","tagline":"Honey Made Easy","footer":"HoneyKey makes honey simple: single-serve, hygienically sealed packs that go wherever you go.","topbar":"Free delivery on eligible orders · Cash on Delivery & UPI accepted","logo":"/logo.png","icon":"/icon.png"},
 "hero":{"chip":"New · Single-serve honey","title":"Pure honey, ready to use. Anywhere.","sub":"HoneyKey spoon packs deliver 7 g of pure honey with a built-in spoon. No jar, no mess, no hassle.","cta":"Shop Now","image":""},
 "usps":[{"icon":"🥄","t":"Built-in Spoon","d":"No separate cutlery needed"},{"icon":"🎒","t":"Easy to Carry","d":"Fits pocket, bag or lunchbox"},{"icon":"🛡️","t":"Hygienically Sealed","d":"Individually film-sealed packs"},{"icon":"🍯","t":"Quality First","d":"Pure honey, consistent quality"}],
 "steps":[{"t":"Tear open","d":"Peel the sealed film."},{"t":"Lift the spoon","d":"7 g of honey, ready to use."},{"t":"Enjoy","d":"No mess, no waste."}],
@@ -13,5 +13,5 @@
 "testimonials":[],
 "faqs":[{"q":"How much honey is in one pack?","a":"Each Classic pack contains 7 g of honey in a disposable spoon, sealed in poly film."},{"q":"How can I pay?","a":"You can pay by UPI (scan the QR code) or choose Cash on Delivery."},{"q":"How do I track my order?","a":"Log in and open Account > Orders to see the status of every order."},{"q":"Do you accept bulk or gifting orders?","a":"Yes. Please contact us through the Contact page or WhatsApp."}],
 "settings":{"deliveryFee":40,"freeAbove":299,"lowStock":50},
-"theme":{"primary":"#14213D","accent":"#F5A400","bg":"#F4F6F8","text":"#1B1F24","card":"#FFFFFF","font":"system","radius":"6"}
+"theme":{"primary":"#2E5416","accent":"#E3A21A","bg":"#FDF7E4","text":"#1F2A14","card":"#FFFFFF","font":"system","radius":"6"}
 }

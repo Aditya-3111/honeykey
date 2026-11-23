@@ -31,7 +31,7 @@ const A=(rq,rs,n)=>who(rq,'a')?n():rs.status(401).json({error:'login chahiye'});
 const U=(rq,rs,n)=>{const id=who(rq,'u');if(!id)return rs.status(401).json({error:'Please login first'});rq.uid=+id;n()};
 
 const content=async()=>{let c={};try{const r=await db("SELECT v FROM kv WHERE k='content'");if(r[0])c=JSON.parse(r[0].v)}catch{}
-  return{...DEF,...c,theme:{...DEF.theme,...c.theme},settings:{...DEF.settings,...c.settings}}};
+       return{...DEF,...c,brand:{...DEF.brand,...c.brand},hero:{...DEF.hero,...c.hero},theme:{...DEF.theme,...c.theme},settings:{...DEF.settings,...c.settings}}};
 const stockMap=async()=>Object.fromEntries((await db('SELECT id,qty FROM stock')).map(r=>[r.id,r.qty]));
 const pub=async()=>{const c=await content();let s={},ok=true;try{s=await stockMap()}catch{ok=false}
   return{...c,settings:{...c.settings,upiOn:!!E.UPI_ID},products:c.products.filter(p=>p.active!==false).map(({cost,...p})=>({...p,soldOut:ok&&(s[p.id]??0)<=0,left:s[p.id]}))}};

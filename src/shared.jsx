@@ -2,6 +2,8 @@ import {createContext} from 'react';
 import {Pack} from './Art.jsx';
 import {inr} from './api.js';
 export const Ctx=createContext(null);
+export const logoOf=b=>(b&&b.logo)||'/logo.png';
+export const iconOf=b=>(b&&b.icon)||'/icon.png';
 export const off=p=>p.mrp>p.price?Math.round((p.mrp-p.price)/p.mrp*100):0;
 export const Img=({p})=>p.image?<img src={p.image} alt={p.name}/>:<Pack c={p.color}/>;
 export const Price=({p})=><div className="price"><b>{inr(p.price)}</b>{p.mrp>p.price&&<><s>{inr(p.mrp)}</s><em>{off(p)}% off</em></>}</div>;
