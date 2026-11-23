@@ -1,3 +1,3 @@
-{"name":"honeykey","private":true,"version":"2.0.0","type":"module","engines":{"node":">=18"},
+{"name":"honeykey","private":true,"version":"3.0.0","type":"module","engines":{"node":">=18"},
 "scripts":{"dev":"vite","build":"vite build","start":"node server.js","postinstall":"vite build"},
-"dependencies":{"express":"4.19.2","react":"18.3.1","react-dom":"18.3.1","react-router-dom":"6.26.2","vite":"5.4.8","@vitejs/plugin-react":"4.3.2"}}
+"dependencies":{"express":"4.19.2","mysql2":"3.11.3","qrcode":"1.5.4","react":"18.3.1","react-dom":"18.3.1","react-router-dom":"6.26.2","vite":"5.4.8","@vitejs/plugin-react":"4.3.2"}}
