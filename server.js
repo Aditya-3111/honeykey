@@ -34,7 +34,7 @@ const content=async()=>{let c={};try{const r=await db("SELECT v FROM kv WHERE k=
        return{...DEF,...c,brand:{...DEF.brand,...c.brand},hero:{...DEF.hero,...c.hero},theme:{...DEF.theme,...c.theme},settings:{...DEF.settings,...c.settings}}};
 const stockMap=async()=>Object.fromEntries((await db('SELECT id,qty FROM stock')).map(r=>[r.id,r.qty]));
 const pub=async()=>{const c=await content();let s={},ok=true;try{s=await stockMap()}catch{ok=false}
-  return{...c,settings:{...c.settings,upiOn:!!E.UPI_ID},products:c.products.filter(p=>p.active!==false).map(({cost,...p})=>({...p,soldOut:ok&&(s[p.id]??0)<=0,left:s[p.id]}))}};
+  return{...c,settings:{...c.settings,upiOn:!!E.UPI_ID},products:c.products.filter(p=>p.active!==false).map(({cost,...p})=>({...p,soldOut:p.status!=='upcoming'&&ok&&(s[p.id]??0)<=0,left:s[p.id]}))}};
 const oo=r=>({no:'HK'+(1000+r.id),id:r.id,userId:r.user_id,date:new Date(r.created).toISOString(),source:r.source,name:r.name,phone:r.phone,address:r.address,pin:r.pin,note:r.note,items:JSON.parse(r.items),subtotal:r.subtotal,fee:r.fee,total:r.total,pay:r.pay,payStatus:r.pay_status,status:r.status,txn:r.txn});
 const uo=r=>{const o=oo(r);delete o.userId;o.items=o.items.map(({cost,...i})=>i);return o};
 const upiInfo=async o=>{if(!E.UPI_ID)return null;const link=`upi://pay?pa=${encodeURIComponent(E.UPI_ID)}&pn=${encodeURIComponent(E.UPI_NAME||'HoneyKey')}&am=${o.total}.00&cu=INR&tn=${o.no}`;return{id:E.UPI_ID,link,qr:await QRCode.toDataURL(link,{margin:1,width:280})}};
@@ -43,7 +43,7 @@ async function mkOrder(b,source,uid){
   const c=await content(),m={};
   for(const it of (Array.isArray(b.items)?b.items:[]).slice(0,20)){const k=Math.min(99,parseInt(it.qty)||0);if(k>0)m[it.id]=Math.min(99,(m[it.id]||0)+k)}
   const items=[];
-  for(const id of Object.keys(m)){const p=c.products.find(x=>x.id===id&&x.active!==false);if(p)items.push({id,name:p.name,qty:m[id],price:+p.price||0,cost:+p.cost||0})}
+  for(const id of Object.keys(m)){const p=c.products.find(x=>x.id===id&&x.active!==false&&x.status!=='upcoming');if(p)items.push({id,name:p.name,qty:m[id],price:+p.price||0,cost:+p.cost||0})}
   if(!items.length)return{error:'Cart is empty'};
   const sub=items.reduce((s,i)=>s+i.price*i.qty,0),st=c.settings,off=source!=='Website';
   const fee=!off&&sub<(+st.freeAbove||0)?(+st.deliveryFee||0):0;

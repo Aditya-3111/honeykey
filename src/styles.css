@@ -38,3 +38,8 @@ label{display:block;margin:10px 0;font-weight:600;font-size:.9rem}input,textarea
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px}.kpi small{display:block;opacity:.7}.kpi b{font-size:1.4rem}
 .bars{display:flex;gap:10px;align-items:flex-end;height:140px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px}.bars div{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}.bars i{width:100%;background:var(--a);border-radius:4px 4px 0 0;display:block}
 .tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.9rem;background:#fff}th,td{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}th{background:#f3efdc}
+
+.badge.soon{background:var(--a);color:#1b1b10}
+.pc.up .pimg{filter:saturate(.85)}
+.soonbox{background:color-mix(in srgb,var(--a) 15%,#fff);border:1px dashed var(--a)}
+.soonbox .row input{background:#fff}
